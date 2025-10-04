@@ -27,11 +27,14 @@ RUN chmod +x start.sh
 # Create directory for Ollama models
 RUN mkdir -p /root/.ollama
 
+# Pre-pull the model during build (optional - comment out if build times out)
+# RUN ollama serve & sleep 5 && ollama pull deepseek-r1:1.5b && pkill ollama
+
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+# Health check - longer grace period for model loading
+HEALTHCHECK --interval=60s --timeout=30s --start-period=300s --retries=5 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Start the application
