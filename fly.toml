@@ -1,0 +1,27 @@
+app = "deepseek-api"
+primary_region = "sea"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+MODEL_NAME = "deepseek-r1:1.5b"
+PORT = "8080"
+MAX_TOKENS = "2048"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 512
+
+[mounts]
+source = "deepseek_models"
+destination = "/root/.ollama"
+initial_size = "3gb"
