@@ -1,57 +1,38 @@
-# Multi-stage build for optimized DeepSeek API on Fly.io
-FROM python:3.11-slim as builder
+# Optimized DeepSeek API Server for Render.com
+FROM python:3.11-slim
 
-# Install build dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    gcc \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
 RUN curl -fsSL https://ollama.ai/install.sh | sh
 
-# Create app directory
-WORKDIR /app
-
-# Copy requirements
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Final stage
-FROM python:3.11-slim
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy Ollama from builder
-COPY --from=builder /usr/local/bin/ollama /usr/local/bin/ollama
-COPY --from=builder /usr/bin/ollama /usr/bin/ollama
-
-# Copy Python dependencies
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-
 # Set working directory
 WORKDIR /app
 
-# Copy application files
-COPY . .
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Create volume for Ollama models
+# Copy application files
+COPY app.py .
+COPY start.sh .
+
+# Make start script executable
+RUN chmod +x start.sh
+
+# Create directory for Ollama models
 RUN mkdir -p /root/.ollama
 
 # Expose port
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Start script
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
-CMD ["/start.sh"]
+# Start the application
+CMD ["./start.sh"]
